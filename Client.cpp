@@ -37,7 +37,7 @@ void UpdatePosition()
 	char buffer[3];
 	sprintf(buffer, "%d", drone_coordinate_x);
 	strcat(szBuffer, buffer);
-	strcat(szBuffer, "\r\n   Drone X coordinate : ");
+	strcat(szBuffer, "\r\n   Drone Y coordinate : ");
 	sprintf(buffer, "%d", drone_coordinate_y);
 	strcat(szBuffer, buffer);
 
