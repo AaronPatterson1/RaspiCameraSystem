@@ -25,6 +25,14 @@ Session * GSession = NULL;
 
 HWND hWndDisplay = NULL;
 HWND hWndBuffer = NULL;
+HWND hWndInit = NULL;
+HWND hWndSend = NULL;
+HWND hWndGenLog = NULL;
+HWND hWndQuit = NULL;
+HWND hWndMoveL = NULL;
+HWND hWndMoveR = NULL;
+HWND hWndMoveU = NULL;
+HWND hWndMoveD = NULL;
 
 LRESULT CALLBACK WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -47,6 +55,14 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 				case IDC_INIT_BUTTON: 
 				{
+					EnableWindow(hWndSend, TRUE);
+					//EnableWindow(hWndGenLog, TRUE);
+					//EnableWindow(hWndQuit, TRUE);
+					EnableWindow(hWndMoveL, TRUE);
+					EnableWindow(hWndMoveR, TRUE);
+					EnableWindow(hWndMoveU, TRUE);
+					EnableWindow(hWndMoveD, TRUE);
+
 					char szBuffer[1024];
 					ZeroMemory(szBuffer, sizeof(szBuffer));
 
@@ -173,47 +189,55 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			SendMessage(hWndBuffer, WM_SETTEXT, NULL, (LPARAM)"Type message here...");
 	
 			//First row action buttons
-			HWND hWndSend = CreateWindow(TEXT("BUTTON"), TEXT("Send"),
+			hWndInit = CreateWindow(TEXT("BUTTON"), TEXT("Init"),
 				WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-				50, 330, 95, 25, hWnd, (HMENU)IDC_SEND_BUTTON,
+				50, 330, 95, 25, hWnd, (HMENU)IDC_INIT_BUTTON,
 				GetModuleHandle(NULL), NULL);
 	
-			HWND hWndInit = CreateWindow(TEXT("BUTTON"), TEXT("Init"),
+			hWndSend = CreateWindow(TEXT("BUTTON"), TEXT("Send"),
 				WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-				150, 330, 95, 25, hWnd, (HMENU)IDC_INIT_BUTTON,
+				150, 330, 95, 25, hWnd, (HMENU)IDC_SEND_BUTTON,
 				GetModuleHandle(NULL), NULL);
 	
-			HWND hWndGenLog = CreateWindow(TEXT("BUTTON"), TEXT("Generate Log"),
+			hWndGenLog = CreateWindow(TEXT("BUTTON"), TEXT("Generate Log"),
 				WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
 				250, 330, 95, 25, hWnd, (HMENU)IDC_GEN_BUTTON,
 				GetModuleHandle(NULL), NULL);
 			
-			HWND hWndQuit = CreateWindow(TEXT("BUTTON"), TEXT("Quit"),
+			hWndQuit = CreateWindow(TEXT("BUTTON"), TEXT("Quit"),
 				WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
 				350, 330, 95, 25, hWnd, (HMENU)IDC_QUIT_BUTTON,
 				GetModuleHandle(NULL), NULL);
 	
 			//Second Row movement buttons
-			HWND hWndMoveL = CreateWindow(TEXT("BUTTON"), TEXT("Move Left"),
+			hWndMoveL = CreateWindow(TEXT("BUTTON"), TEXT("Move Left"),
 				WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
 				50, 375, 95, 25, hWnd, (HMENU)IDC_MLEFT_BUTTON,
 				GetModuleHandle(NULL), NULL);
 	
-			HWND hWndMoveR = CreateWindow(TEXT("BUTTON"), TEXT("Move Right"),
+			hWndMoveR = CreateWindow(TEXT("BUTTON"), TEXT("Move Right"),
 				WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
 				150, 375, 95, 25, hWnd, (HMENU)IDC_MRIGHT_BUTTON,
 				GetModuleHandle(NULL), NULL);
 	
-			HWND hWndMoveU = CreateWindow(TEXT("BUTTON"), TEXT("Move Up"),
+			hWndMoveU = CreateWindow(TEXT("BUTTON"), TEXT("Move Up"),
 				WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
 				250, 375, 95, 25, hWnd, (HMENU)IDC_MUP_BUTTON,
 				GetModuleHandle(NULL), NULL);
 	
-			HWND hWndMoveD = CreateWindow(TEXT("BUTTON"), TEXT("Move Down"),
+			hWndMoveD = CreateWindow(TEXT("BUTTON"), TEXT("Move Down"),
 				WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
 				350, 375, 95, 25, hWnd, (HMENU)IDC_MDOWN_BUTTON,
 				GetModuleHandle(NULL), NULL);
 	
+			EnableWindow(hWndSend, FALSE);
+			//EnableWindow(hWndGenLog, FALSE);
+			//EnableWindow(hWndQuit, FALSE);
+			EnableWindow(hWndMoveL, FALSE);
+			EnableWindow(hWndMoveR, FALSE);
+			EnableWindow(hWndMoveU, FALSE);
+			EnableWindow(hWndMoveD, FALSE);
+
 			SendMessage(hWndSend, WM_SETFONT, (WPARAM)hfDefault, MAKELPARAM(FALSE, 0));
 			SendMessage(hWndInit, WM_SETFONT, (WPARAM)hfDefault, MAKELPARAM(FALSE, 0));
 			SendMessage(hWndGenLog, WM_SETFONT, (WPARAM)hfDefault, MAKELPARAM(FALSE, 0));
