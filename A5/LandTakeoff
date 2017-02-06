@@ -1,0 +1,15 @@
+#ifndef CAMERA_H
+#define CAMERA_H
+
+
+class LandTakeoff{
+    bool flyLand; //Indicates status of drone, true if flying, false otherwise
+    bool com_buffer; //If command buffer is true, drone is busy executing another command
+
+public:
+    bool status();
+
+};
+
+
+#endif // CAMERA_H
