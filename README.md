@@ -1,5 +1,12 @@
+# Team14Repo - Pi Camera?
 
-# Team14Repo
+## NOTE
+```
+I have merged all of the branches and sorted the files within your respectively named folder. 
+From now on do not create more branches, instead place your files within your folder and push to master.
+- Marko
+```
+
 ```
 Files for prototype
  Server
@@ -21,4 +28,3 @@ Files for prototype
   dialog.cpp 
   dialog.h
   main.cpp
-
