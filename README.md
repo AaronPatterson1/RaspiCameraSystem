@@ -1,10 +1,9 @@
 # Team14Repo - Pi Camera?
 
-## NOTE
+## Compile Instructions
 ```
-I have merged all of the branches and sorted the files within your respectively named folder. 
-From now on do not create more branches, instead place your files within your folder and push to master.
-- Marko
+Pi - Server
+ g++ -Wno-write-strings -std=c++0x M1Server.cpp PktDef.cpp
 ```
 
 ```
