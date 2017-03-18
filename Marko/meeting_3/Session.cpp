@@ -69,13 +69,6 @@ int Session::StartDataCom()
         WSACleanup();
         return -1;
     }
-
-    buffer[currentCharNumb] = (char*)malloc(sizeof("Waiting for client connection"));
-    strcpy(buffer[currentCharNumb], "Waiting for client connection");
-    ++currentCharNumb;
-    buffer[currentCharNumb] = (char*)malloc(sizeof("\nCommands\n   0 - sends packet\n   1 - sends sleep packet (terminates connection)\n   2 - sends ack packet"));
-    strcpy(buffer[currentCharNumb], "\nCommands\n   0 - sends packet\n   1 - sends sleep packet (terminates connection)\n   2 - sends ack packet");
-    ++currentCharNumb;
 }
 
 void Session::SendPacket(std::string s)
@@ -100,25 +93,19 @@ int Session::RecievePacket(HWND* hWndPktInfo, HWND* ghWnd)
 	{
 		if (txPacket.CheckCRC(txPacket.GetRawBuffer(), 7))
 		{
-            // make inlined function that covers this 
-			buffer[currentCharNumb] = (char*)malloc(sizeof("\nCRC Accepted\n"));
-			strcpy(buffer[currentCharNumb], "\nCRC Accepted\n");
-			++currentCharNumb;
-            //
-            
+            DisplayMsgInHWND("\nCRC Accepted\n", hWndPktInfo, ghWnd);
+			
 			if (txPacket.GetAck())
 			{
-				buffer[currentCharNumb] = (char*)malloc(sizeof("Acknowledgement Received\n"));
-				strcpy(buffer[currentCharNumb], "Acknowledgement Received\n");
-				++currentCharNumb;
+				DisplayMsgInHWND("Acknowledgement Received\n", hWndPktInfo, ghWnd);
 			}
 
 			if (txPacket.GetCmd() == COMMAND)
             {
-                buffer[currentCharNumb] = (char*)malloc(sizeof("Enter name of command or script to be run : "));
-				strcpy(buffer[currentCharNumb], "Enter name of command or script to be run : ");
-				++currentCharNumb;
-                
+				DisplayMsgInHWND("Enter name of command or script to be run : ", hWndPktInfo, ghWnd);
+
+				//IMPORTANT
+				//TODO(marko) : update pktinfo buffer and use send instead of this
                 std::string filename;
                 std::cin >> filename;
                 send(clientSocketL, filename.c_str(), 256, 0);
@@ -129,27 +116,12 @@ int Session::RecievePacket(HWND* hWndPktInfo, HWND* ghWnd)
 
                 if (txPacket.CheckCRC(txPacket.GetRawBuffer(), 7))
                 {
-                    buffer[currentCharNumb] = (char*)malloc(sizeof("Python script was ran"));
-                    strcpy(buffer[currentCharNumb], "Python script was ran");
-                    ++currentCharNumb;
+					DisplayMsgInHWND("Python script was ran", hWndPktInfo, ghWnd);
                 }
-             
-                //char RxBuffer_StatusPacket[11];
-                //n = recv(ConnectionSocket, (char *)&RxBuffer_StatusPacket, 11, 0);
-                //memcpy(&txPacket, RxBuffer_StatusPacket, 11);
-                
-                // std::string nc = std::to_string((unsigned int)txPacket.GetSeconds());
-                // std::string str = "Packet Length " + nc + " \n";
-                // buffer[currentCharNumb] = (char*)malloc(sizeof(str));
-                // strcpy(buffer[currentCharNumb], str.c_str());
-                // ++currentCharNumb;
             }
-            
             else if (txPacket.GetCmd() == SLEEP)
             {
-                buffer[currentCharNumb] = (char*)malloc(sizeof("Msg Rx (SLEEP) terminating all socket connections\n"));
-                strcpy(buffer[currentCharNumb], "Msg Rx (SLEEP) terminating all socket connections\n");
-                ++currentCharNumb;
+				DisplayMsgInHWND("Msg Rx (SLEEP) terminating all socket connections\n", hWndPktInfo, ghWnd);
                 closesocket(clientSocketL);
             }
             
@@ -158,23 +130,8 @@ int Session::RecievePacket(HWND* hWndPktInfo, HWND* ghWnd)
 	}
 	else
 	{
-		HDC hdc = GetDC(*hWndPktInfo);
-		char edittxt[1024];
-
-		RECT rc;
-		GetClientRect(*hWndPktInfo, &rc);
-		ExtTextOut(hdc, rc.left, rc.top, ETO_OPAQUE, &rc, 0, 0, 0);
-		char * text = "Failure to retrieve packet";
-		
-		rc.top += pktInfoBufferOffset;
-		pktInfoBufferOffset += 20;
-
-		DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
-		ReleaseDC(*hWndPktInfo, hdc);
-
-		UpdateWindow(*ghWnd);
+		DisplayMsgInHWND("Failure to retrieve packet", hWndPktInfo, ghWnd);
 	}
     
 	return 0;
 }
-

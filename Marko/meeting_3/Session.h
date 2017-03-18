@@ -19,7 +19,7 @@
 #include "pktdef.h"
 #include <iostream>
 
-static int pktInfoBufferOffset;
+static int pktInfoBufferOffset = 10;
 //Used to keep track of the current amount in the buffer
 static unsigned int currentCharNumb;
 
@@ -33,6 +33,22 @@ class Session
 
 	PktDef txPacket;
 	char** buffer;
+
+	inline static
+	void DisplayMsgInHWND(char* str, HWND* hWndPktInfo, HWND* ghWnd)
+	{
+		HDC hdc = GetDC(*hWndPktInfo);
+		char edittxt[1024];
+
+		RECT rc;
+		GetClientRect(*hWndPktInfo, &rc);
+		ExtTextOut(hdc, rc.left, rc.top, ETO_OPAQUE, &rc, 0, 0, 0);
+
+		DrawTextA(hdc, str, strlen(str), &rc, DT_TOP | DT_LEFT);
+		ReleaseDC(*hWndPktInfo, hdc);
+
+		UpdateWindow(*ghWnd);
+	}
 
 public:
 	Session();

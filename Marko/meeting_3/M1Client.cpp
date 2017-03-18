@@ -13,6 +13,7 @@
 //#include <iostream> in session
 #include <string.h>
 #include <string>
+#include <wchar.h>
 #include <stdlib.h>
 #include <errno.h>
 //#include "pktdef.h" included with session
@@ -24,29 +25,86 @@
 #pragma comment(lib, "ws2_32.lib")
 
 //Pull these out into a resource filw
-#define IDB_RADIO1 301
-#define IDB_RADIO2 302
+//Video Quality
+#define IDB_VQRADIO1 301
+#define IDB_VQRADIO2 302
+#define IDB_VQRADIO3 303
+#define IDB_VQRADIO4 304
 
-struct Globals
+//Filter
+#define IDB_FRADIO1 311
+#define IDB_FRADIO2 312
+#define IDB_FRADIO3 313
+
+//Rotation
+#define IDB_RRADIO1 321
+#define IDB_RRADIO2 322
+#define IDB_RRADIO3 323
+#define IDB_RRADIO4 324
+
+//Framerate
+#define IDB_FRRADIO1 331
+#define IDB_FRRADIO2 332
+#define IDB_FRRADIO3 333
+#define IDB_FRRADIO4 334
+
+//Brightness
+#define IDB_BRADIO1 341
+#define IDB_BRADIO2 342
+#define IDB_BRADIO3 343
+#define IDB_BRADIO4 344
+#define IDB_BRADIO5 345
+//End of window menu defines
+
+struct MainWind
 {
 	HINSTANCE hInstance;
 	HWND hwnd;
 	HDC hdc;
 	int width, height;
 };
-
-Globals g;
+MainWind g;
 
 HWND hWndDisplay;
 HWND hWndBuffer;
 HWND hWndPktInfo;
-static int i = 10;
 char* text = NULL;
 Session* gsession;
-//static int pktInfoBufferOffset;
 
 bool init = false;
 bool messageToBeSent = false;
+
+/*
+inline static
+void TextToHWND(RECT* rc, char* strdis)
+{
+	rc.top += pktInfoBufferOffset;
+	pktInfoBufferOffset += 20;
+	DrawTextA(hdc, strdis, strlen(strdis), &rc, DT_TOP | DT_LEFT);
+}
+*/
+
+inline static
+HWND CreateGroupBox(char* gname, int ypos)
+{
+	//TODO(marko) : add error checking
+	return CreateWindowEx(0, "BUTTON", gname,
+		                  WS_VISIBLE | WS_CHILD | BS_GROUPBOX,
+		                  25, ypos, 420, 50,
+		                  g.hwnd, (HMENU)NULL, g.hInstance,
+		                  NULL);
+}
+
+inline static
+HWND CreateRadioButton(char* bname, int xpos, int ypos, int sxpos, int sypos, int id)
+{
+	//TODO(marko) : add error checking
+	return CreateWindowEx(0, "BUTTON", bname,
+		                  WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON,
+		                  xpos, ypos, sxpos, sypos,
+		                  g.hwnd, (HMENU)id, g.hInstance,
+		                  NULL);
+}
 
 LRESULT CALLBACK
 WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
@@ -54,8 +112,8 @@ WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 	switch (message)
 	{
         case WM_CREATE:
-        {
-            //maybe put the buttons and window creation here
+        {	
+            
         }
         break;
 
@@ -75,8 +133,7 @@ WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
                 {
                     HDC hdc = GetDC(hWndPktInfo);
                     char edittxt[1024];
-                    auto filedit = GetDlgItem(hWndBuffer, 200);
-                    int editlength = GetWindowTextLength(filedit);
+                    int editlength = GetWindowTextLength(GetDlgItem(hWndBuffer, 200));
                     GetWindowText(hWndBuffer, edittxt, 1024);
 
                     RECT rc;
@@ -84,11 +141,7 @@ WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
                     ExtTextOut(hdc, rc.left, rc.top, ETO_OPAQUE, &rc, 0, 0, 0);
 
                     text = edittxt;
-                    rc.top += pktInfoBufferOffset;
-
-                    gsession->GetBuffer()[currentCharNumb] = (char*)malloc(sizeof(text));
-                    strcpy(gsession->GetBuffer()[currentCharNumb], text);
-                    ++currentCharNumb;
+                    //rc.top += pktInfoBufferOffset;
 
                     DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
                     ReleaseDC(hWndDisplay, hdc);
@@ -118,44 +171,48 @@ WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
                         text = "Begin Initialization";
                         init = true;
                     }
-                    rc.top += pktInfoBufferOffset;
-					pktInfoBufferOffset += 20;
-			
-                    gsession->GetBuffer()[currentCharNumb] = (char*)malloc(sizeof(text));
-                    strcpy(gsession->GetBuffer()[currentCharNumb], text);
-                    ++currentCharNumb;
-
+                    //rc.top += pktInfoBufferOffset;
+					//pktInfoBufferOffset += 20;
                     DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
 
                     int dataComState = gsession->StartDataCom();
                     if (dataComState == -1)
                     {
+						//When static scroll is added switch to this
+						//TextToHWND(rc, "Data communication start failed");
+
                         text = "Data communication start failed";
-                        rc.top += pktInfoBufferOffset;
-
-                        gsession->GetBuffer()[currentCharNumb] = (char*)malloc(sizeof(text));
-                        strcpy(gsession->GetBuffer()[currentCharNumb], text);
-                        ++currentCharNumb;
-
-                        DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
+                        //rc.top += pktInfoBufferOffset;
+						DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
                     }
+					else
+					{
+						text = "Waiting for client connection";
+						//rc.top += pktInfoBufferOffset;
+						DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
+
+						text = "\nCommands\n   0 - sends packet\n   1 - sends sleep packet (terminates connection)\n   2 - sends ack packet";
+						//rc.top += pktInfoBufferOffset;
+						DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
+					}
 
                     ReleaseDC(hWndPktInfo, hdc);
 					UpdateWindow(g.hwnd);
                 }
                 break;
 
+				//Make a function handle a group of radio buttons instead of expanding in the switch statement
 				//TODO(marko) : add the other buttons and settings options
-                case IDB_RADIO1:
+                case IDB_VQRADIO1:
                 {
                     switch (HIWORD(wparam))
                     {
                         case BN_CLICKED:
                         {
-                            if (SendDlgItemMessage(g.hwnd, IDB_RADIO1, BM_GETCHECK, 0, 0) == 0) 
+                            if (SendDlgItemMessage(g.hwnd, IDB_VQRADIO1, BM_GETCHECK, 0, 0) == 0)
                             {
-                                SendDlgItemMessage(g.hwnd, IDB_RADIO1, BM_SETCHECK, 1, 0);
-                                SendDlgItemMessage(g.hwnd, IDB_RADIO2, BM_SETCHECK, 0, 0);
+                                SendDlgItemMessage(g.hwnd, IDB_VQRADIO1, BM_SETCHECK, 1, 0);
+                                SendDlgItemMessage(g.hwnd, IDB_VQRADIO2, BM_SETCHECK, 0, 0);
                             }
                         }
                         break; 
@@ -163,15 +220,15 @@ WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
                 }
                 break;
 
-                case IDB_RADIO2:
+                case IDB_VQRADIO2:
                 {
                     switch (HIWORD(wparam))
                     {
                         case BN_CLICKED:
-                            if (SendDlgItemMessage(g.hwnd, IDB_RADIO2, BM_GETCHECK, 0, 0) == 0) 
+                            if (SendDlgItemMessage(g.hwnd, IDB_VQRADIO2, BM_GETCHECK, 0, 0) == 0)
                             {
-                                SendDlgItemMessage(g.hwnd, IDB_RADIO2, BM_SETCHECK, 1, 0);
-                                SendDlgItemMessage(g.hwnd, IDB_RADIO1, BM_SETCHECK, 0, 0);
+                                SendDlgItemMessage(g.hwnd, IDB_VQRADIO2, BM_SETCHECK, 1, 0);
+                                SendDlgItemMessage(g.hwnd, IDB_VQRADIO1, BM_SETCHECK, 0, 0);
                             }
                             break; 
                     }
@@ -209,16 +266,12 @@ WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 int WINAPI
 WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	//Start Session
 	Session session;
 	gsession = &session;
-
-	//Build the window and elements from here on out
 	g.hInstance = hInstance;
 
 	WNDCLASSEX wc;
-
-	wc.cbSize = sizeof(WNDCLASSEX);
+    wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wc.lpfnWndProc = WndProc;
 	wc.cbClsExtra = 0;
@@ -245,10 +298,10 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 
 	AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, false);
 
-	g.hwnd = CreateWindowEx(WS_EX_STATICEDGE, "Motion Camera Client", "Drone Communication - Server",
-		                  WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-		                  rect.right - rect.left, rect.bottom - rect.top,
-		                  NULL, NULL, hInstance, NULL);
+	g.hwnd = CreateWindowEx(WS_EX_STATICEDGE, "Motion Camera Client", "Drone Communication - Client",
+		                    WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
+		                    rect.right - rect.left, rect.bottom - rect.top,
+		                    NULL, NULL, hInstance, NULL);
 
 	if (g.hwnd == NULL)
 	{
@@ -258,85 +311,66 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 
 	//TODO(marko) : drag out button and display creation to seperate function instead
 	HWND hwndSend = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Send"),
-		                         WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
-		                         800, 10, 125, 40,
-		                         g.hwnd, (HMENU)101, NULL, NULL);
+		                           WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
+		                           800, 10, 125, 40,
+		                           g.hwnd, (HMENU)101, NULL, NULL);
 
 	HWND hwndInit = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Initialize"),
-		                         WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
-		                         800, 685, 125, 40,
-		                         g.hwnd, (HMENU)102, NULL, NULL);
+		                           WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
+		                           800, 685, 125, 40,
+		                           g.hwnd, (HMENU)102, NULL, NULL);
 
 	HWND hwndSettingSend = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Save Settings"),
-		                                WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
-		                                10, 685, 125, 40,
-		                                g.hwnd, (HMENU)103, NULL, NULL);
+		                                  WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
+		                                  10, 685, 125, 40,
+		                                  g.hwnd, (HMENU)103, NULL, NULL);
 
-	HWND hwndGroupBox = CreateWindowEx(0, TEXT("STATIC"),//TEXT("Button"), 
-		                             TEXT("Settings"),
-		                             WS_VISIBLE | WS_CHILD | WS_THICKFRAME,
-		                             10, 200, 450, 470,
-		                             g.hwnd, (HMENU)101, NULL, NULL);
+	HWND hwndGroupBox = CreateWindowEx(0, TEXT("STATIC"), TEXT("Settings"),
+		                               WS_VISIBLE | WS_CHILD | WS_THICKFRAME,
+		                               10, 200, 450, 470,
+		                               g.hwnd, (HMENU)104, NULL, NULL);
 
-    //Settings radio buttons
-	HWND hWndVideoQuality = CreateWindowEx(0, "BUTTON", "Video Quality",
-		WS_VISIBLE | WS_CHILD | BS_GROUPBOX,
-		25, 250, 420, 50,
-		g.hwnd, (HMENU)NULL, g.hInstance,
-		NULL);
 
-    HWND hWndVQButton1 = CreateWindowEx(0, "BUTTON", "1080p", 
-                                      WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON,
-                                      35, 265, 50, 25,//10, 10, 80, 20,
-                                      g.hwnd, (HMENU)IDB_RADIO1, g.hInstance,
-                                      NULL);
-
-    HWND hWndVQButton2 = CreateWindowEx(0, "BUTTON", "720p",
-                                      WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON,
-                                      95, 265, 50, 25,//10, 10, 80, 20,
-                                      g.hwnd, (HMENU)IDB_RADIO2, g.hInstance,
-                                      NULL);
-	HWND hWndVQButton3 = CreateWindowEx(0, "BUTTON", "480p",
-		WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON,
-		155, 265, 50, 25,
-		g.hwnd, (HMENU)303, g.hInstance,
-		NULL);
-	
-	HWND hWndVQButton4 = CreateWindowEx(0, "BUTTON", "360p",
-		WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON,
-		215, 265, 50, 25,
-		g.hwnd, (HMENU)303, g.hInstance,
-		NULL);
+	//Settings radio buttons Video Quality
+	HWND hWndVideoQuality = CreateGroupBox("Video Quality", 235);
+	HWND hWndVQButton1 = CreateRadioButton("1080p", 35, 250, 50, 25, IDB_VQRADIO1);
+	HWND hWndVQButton2 = CreateRadioButton("720p", 95, 250, 50, 25, IDB_VQRADIO2);
+	HWND hWndVQButton3 = CreateRadioButton("480p", 155, 250, 50, 25, IDB_VQRADIO3);
+	HWND hWndVQButton4 = CreateRadioButton("480p", 215, 250, 50, 25, IDB_VQRADIO4);
 
 	//Filter
-	HWND hWndVideoFilter = CreateWindowEx(0, "BUTTON", "Video Filter",
-		WS_VISIBLE | WS_CHILD | BS_GROUPBOX,
-		25, 300, 420, 50,
-		g.hwnd, (HMENU)NULL, g.hInstance,
-		NULL);
+	HWND hWndVideoFilter = CreateGroupBox("Video Filter", 300);
+	HWND hWndVFButton1 = CreateRadioButton("Normal", 35, 315, 75, 25, IDB_FRADIO1);
+	HWND hWndVFButton2 = CreateRadioButton("Black and white", 125, 315, 125, 25, IDB_FRADIO2);
+	HWND hWndVFButton3 = CreateRadioButton("Negative", 255, 315, 75, 25, IDB_FRADIO3);
+	
+	//Rotation
+	HWND hWndVideoRotation = CreateGroupBox("Video Rotation", 365);
+	HWND hWndRButton1 = CreateRadioButton("0", 35, 380, 50, 25, IDB_RRADIO1);
+	HWND hWndRButton2 = CreateRadioButton("90", 95, 380, 50, 25, IDB_RRADIO2);
+	HWND hWndRButton3 = CreateRadioButton("180", 155, 380, 50, 25, IDB_RRADIO3);
+	HWND hWndRButton4 = CreateRadioButton("270", 215, 380, 50, 25, IDB_RRADIO4);
 
-	HWND hWndVFButton1 = CreateWindowEx(0, "BUTTON", "Normal",
-		WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON,
-		35, 315, 75, 25,
-		g.hwnd, (HMENU)304, g.hInstance,
-		NULL);
+	//Framerates
+	HWND hWndFrameRate = CreateGroupBox("Frame rate (fps)", 430);
+	HWND hWndFRButton1 = CreateRadioButton("15", 35, 445, 50, 25, IDB_FRRADIO1);
+	HWND hWndFRButton2 = CreateRadioButton("24", 95, 445, 50, 25, IDB_FRRADIO2);
+	HWND hWndFRButton3 = CreateRadioButton("28", 155, 445, 50, 25, IDB_FRRADIO3);
+	HWND hWndFRButton4 = CreateRadioButton("30", 215, 445, 50, 25, IDB_FRRADIO4);
 
-	HWND hWndVFButton2 = CreateWindowEx(0, "BUTTON", "Black and whtie",
-		WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON,
-		125, 315, 125, 25,
-		g.hwnd, (HMENU)305, g.hInstance,
-		NULL);
-	HWND hWndVFButton3 = CreateWindowEx(0, "BUTTON", "etc",
-		WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON,
-		255, 315, 50, 25,
-		g.hwnd, (HMENU)306, g.hInstance,
-		NULL);
+	//Brigthness
+	HWND hWndBrightness = CreateGroupBox("Brightness", 495);
+    HWND hWndBButton1 = CreateRadioButton("0", 35, 510, 50, 25, IDB_BRADIO1);
+	HWND hWndBButton2 = CreateRadioButton("25", 95, 510, 50, 25, IDB_BRADIO2);
+	HWND hWndBButton3 = CreateRadioButton("50", 155, 510, 50, 25, IDB_BRADIO3);
+	HWND hWndBButton4 = CreateRadioButton("75", 215, 510, 50, 25, IDB_BRADIO4);
+	HWND hWndBButton5 = CreateRadioButton("100", 275, 510, 50, 25, IDB_BRADIO5);
 
 	// Create the list-view window in report view with label editing enabled.
 	hWndDisplay = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("ListBox"), TEXT("Display"),
-								WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | LBS_HASSTRINGS | LBS_STANDARD,
-								475, 200, 450, 475,
-								g.hwnd, (HMENU)201, NULL, NULL);
+								 WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | LBS_HASSTRINGS | LBS_STANDARD,
+								 475, 200, 450, 475,
+								 g.hwnd, (HMENU)105, NULL, NULL);
 
 	// Create seperate thread to retrieve vid files and update window
 	// Test to ensure display is correct
@@ -351,22 +385,20 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 	hWndBuffer = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("Edit"), NULL,
 		                        WS_CHILD | WS_VISIBLE,
 		                        10, 10, 775, 40,
-		                        g.hwnd, (HMENU)200, NULL, NULL);
+		                        g.hwnd, (HMENU)106, NULL, NULL);
 
+	//Add scroll support instead of overwriting the info
 	hWndPktInfo = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("Static"), NULL,
-								WS_CHILD | WS_VISIBLE | WS_VSCROLL,
-								10, 60, 775, 115,
-								g.hwnd, (HMENU)202, NULL, NULL);
+								 WS_CHILD | WS_VISIBLE | WS_VSCROLL,
+								 10, 60, 775, 115,
+								 g.hwnd, (HMENU)107, NULL, NULL);
 
 	ShowWindow(g.hwnd, nCmdShow);
-	
 	UpdateWindow(hWndDisplay);
 	UpdateWindow(g.hwnd);
-
 	g.hdc = GetDC(g.hwnd);
 
 	MSG msg = {};
-
 	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 	{
 		if (msg.message == WM_QUIT)
@@ -388,6 +420,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 		}
 	}
 
+	ReleaseDC(g.hwnd, g.hdc);
     return 0;
 }
 
