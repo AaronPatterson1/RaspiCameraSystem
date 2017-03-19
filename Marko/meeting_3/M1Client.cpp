@@ -96,14 +96,25 @@ HWND CreateGroupBox(char* gname, int ypos)
 }
 
 inline static
-HWND CreateRadioButton(char* bname, int xpos, int ypos, int sxpos, int sypos, int id)
+HWND CreateRadioButton(char* bname, int xpos, int ypos, int sxpos, int sypos, int id, bool gr)
 {
-	//TODO(marko) : add error checking
-	return CreateWindowEx(0, "BUTTON", bname,
-		                  WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON,
-		                  xpos, ypos, sxpos, sypos,
-		                  g.hwnd, (HMENU)id, g.hInstance,
-		                  NULL);
+	if (gr)
+	{
+		return CreateWindowEx(0, "BUTTON", bname,
+			WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON | WS_GROUP,
+			xpos, ypos, sxpos, sypos,
+			g.hwnd, (HMENU)id, g.hInstance,
+			NULL);
+	}
+	else
+	{
+		//TODO(marko) : add error checking
+		return CreateWindowEx(0, "BUTTON", bname,
+			WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON,
+			xpos, ypos, sxpos, sypos,
+			g.hwnd, (HMENU)id, g.hInstance,
+			NULL);
+	}
 }
 
 LRESULT CALLBACK
@@ -200,9 +211,52 @@ WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
                 }
                 break;
 
+				case 103:
+				{
+					gsession->SendPacket("4");//Settings
+
+					std::string a;
+					//pull this out into a function
+					//Video Quality
+					if (IsDlgButtonChecked(hwnd, IDB_VQRADIO1)) a = "1";
+					else if (IsDlgButtonChecked(hwnd, IDB_VQRADIO2)) a = "2";
+					else if (IsDlgButtonChecked(hwnd, IDB_VQRADIO3)) a = "3";
+					else if (IsDlgButtonChecked(hwnd, IDB_VQRADIO4)) a = "4";
+					gsession->SendSettingValue(a);
+
+					//Filter
+					if (IsDlgButtonChecked(hwnd, IDB_FRADIO1)) a = "1";
+					else if (IsDlgButtonChecked(hwnd, IDB_FRADIO2)) a = "2";
+					else if (IsDlgButtonChecked(hwnd, IDB_FRADIO3)) a = "3";
+					gsession->SendSettingValue(a);
+
+					//Rotation
+					if (IsDlgButtonChecked(hwnd, IDB_RRADIO1)) a = "1";
+					else if (IsDlgButtonChecked(hwnd, IDB_RRADIO2)) a = "2";
+					else if (IsDlgButtonChecked(hwnd, IDB_RRADIO3)) a = "3";
+					else if (IsDlgButtonChecked(hwnd, IDB_RRADIO4)) a = "4";
+					gsession->SendSettingValue(a);
+
+					//Framerate
+					if (IsDlgButtonChecked(hwnd, IDB_FRRADIO1)) a = "1";
+					else if (IsDlgButtonChecked(hwnd, IDB_FRRADIO2)) a = "2";
+					else if (IsDlgButtonChecked(hwnd, IDB_FRRADIO3)) a = "3";
+					else if (IsDlgButtonChecked(hwnd, IDB_FRRADIO4)) a = "4";
+					gsession->SendSettingValue(a);
+
+					//Brightness
+					if (IsDlgButtonChecked(hwnd, IDB_BRADIO1)) a = "1";
+					else if (IsDlgButtonChecked(hwnd, IDB_BRADIO2)) a = "2";
+					else if (IsDlgButtonChecked(hwnd, IDB_BRADIO3)) a = "3";
+					else if (IsDlgButtonChecked(hwnd, IDB_BRADIO4)) a = "4";
+					else if (IsDlgButtonChecked(hwnd, IDB_BRADIO5)) a = "5";
+					gsession->SendSettingValue(a);
+				}
+				break;
+
 				//Make a function handle a group of radio buttons instead of expanding in the switch statement
 				//TODO(marko) : add the other buttons and settings options
-                case IDB_VQRADIO1:
+                /*case IDB_VQRADIO1:
                 {
                     switch (HIWORD(wparam))
                     {
@@ -233,6 +287,7 @@ WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
                     }
                 }
                 break;
+				*/
             }                
         }
         break;
@@ -332,38 +387,48 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 
 	//Settings radio buttons Video Quality
 	HWND hWndVideoQuality = CreateGroupBox("Video Quality", 235);
-	HWND hWndVQButton1 = CreateRadioButton("1080p", 35, 250, 50, 25, IDB_VQRADIO1);
-	HWND hWndVQButton2 = CreateRadioButton("720p", 95, 250, 50, 25, IDB_VQRADIO2);
-	HWND hWndVQButton3 = CreateRadioButton("480p", 155, 250, 50, 25, IDB_VQRADIO3);
-	HWND hWndVQButton4 = CreateRadioButton("480p", 215, 250, 50, 25, IDB_VQRADIO4);
+	HWND hWndVQButton1 = CreateRadioButton("1080p", 35, 250, 50, 25, IDB_VQRADIO1, TRUE);
+	SendMessage(hWndVQButton1, BM_SETCHECK, BST_CHECKED, 0);
+
+	HWND hWndVQButton2 = CreateRadioButton("720p", 95, 250, 50, 25, IDB_VQRADIO2, FALSE);
+	HWND hWndVQButton3 = CreateRadioButton("480p", 155, 250, 50, 25, IDB_VQRADIO3, FALSE);
+	HWND hWndVQButton4 = CreateRadioButton("360p", 215, 250, 50, 25, IDB_VQRADIO4, FALSE);
 
 	//Filter
 	HWND hWndVideoFilter = CreateGroupBox("Video Filter", 300);
-	HWND hWndVFButton1 = CreateRadioButton("Normal", 35, 315, 75, 25, IDB_FRADIO1);
-	HWND hWndVFButton2 = CreateRadioButton("Black and white", 125, 315, 125, 25, IDB_FRADIO2);
-	HWND hWndVFButton3 = CreateRadioButton("Negative", 255, 315, 75, 25, IDB_FRADIO3);
+	HWND hWndVFButton1 = CreateRadioButton("Normal", 35, 315, 75, 25, IDB_FRADIO1, TRUE);
+	SendMessage(hWndVFButton1, BM_SETCHECK, BST_CHECKED, 0);
+
+	HWND hWndVFButton2 = CreateRadioButton("Black and white", 125, 315, 125, 25, IDB_FRADIO2, FALSE);
+	HWND hWndVFButton3 = CreateRadioButton("Negative", 255, 315, 75, 25, IDB_FRADIO3, FALSE);
 	
 	//Rotation
 	HWND hWndVideoRotation = CreateGroupBox("Video Rotation", 365);
-	HWND hWndRButton1 = CreateRadioButton("0", 35, 380, 50, 25, IDB_RRADIO1);
-	HWND hWndRButton2 = CreateRadioButton("90", 95, 380, 50, 25, IDB_RRADIO2);
-	HWND hWndRButton3 = CreateRadioButton("180", 155, 380, 50, 25, IDB_RRADIO3);
-	HWND hWndRButton4 = CreateRadioButton("270", 215, 380, 50, 25, IDB_RRADIO4);
+	HWND hWndRButton1 = CreateRadioButton("0", 35, 380, 50, 25, IDB_RRADIO1, TRUE);
+	SendMessage(hWndRButton1, BM_SETCHECK, BST_CHECKED, 0);
+
+	HWND hWndRButton2 = CreateRadioButton("90", 95, 380, 50, 25, IDB_RRADIO2, FALSE);
+	HWND hWndRButton3 = CreateRadioButton("180", 155, 380, 50, 25, IDB_RRADIO3, FALSE);
+	HWND hWndRButton4 = CreateRadioButton("270", 215, 380, 50, 25, IDB_RRADIO4, FALSE);
 
 	//Framerates
 	HWND hWndFrameRate = CreateGroupBox("Frame rate (fps)", 430);
-	HWND hWndFRButton1 = CreateRadioButton("15", 35, 445, 50, 25, IDB_FRRADIO1);
-	HWND hWndFRButton2 = CreateRadioButton("24", 95, 445, 50, 25, IDB_FRRADIO2);
-	HWND hWndFRButton3 = CreateRadioButton("28", 155, 445, 50, 25, IDB_FRRADIO3);
-	HWND hWndFRButton4 = CreateRadioButton("30", 215, 445, 50, 25, IDB_FRRADIO4);
+	HWND hWndFRButton1 = CreateRadioButton("15", 35, 445, 50, 25, IDB_FRRADIO1, TRUE);
+	SendMessage(hWndFRButton1, BM_SETCHECK, BST_CHECKED, 0);
+
+	HWND hWndFRButton2 = CreateRadioButton("24", 95, 445, 50, 25, IDB_FRRADIO2, FALSE);
+	HWND hWndFRButton3 = CreateRadioButton("28", 155, 445, 50, 25, IDB_FRRADIO3, FALSE);
+	HWND hWndFRButton4 = CreateRadioButton("30", 215, 445, 50, 25, IDB_FRRADIO4, FALSE);
 
 	//Brigthness
 	HWND hWndBrightness = CreateGroupBox("Brightness", 495);
-    HWND hWndBButton1 = CreateRadioButton("0", 35, 510, 50, 25, IDB_BRADIO1);
-	HWND hWndBButton2 = CreateRadioButton("25", 95, 510, 50, 25, IDB_BRADIO2);
-	HWND hWndBButton3 = CreateRadioButton("50", 155, 510, 50, 25, IDB_BRADIO3);
-	HWND hWndBButton4 = CreateRadioButton("75", 215, 510, 50, 25, IDB_BRADIO4);
-	HWND hWndBButton5 = CreateRadioButton("100", 275, 510, 50, 25, IDB_BRADIO5);
+    HWND hWndBButton1 = CreateRadioButton("0", 35, 510, 50, 25, IDB_BRADIO1, TRUE);
+	SendMessage(hWndBButton1, BM_SETCHECK, BST_CHECKED, 0);
+
+	HWND hWndBButton2 = CreateRadioButton("25", 95, 510, 50, 25, IDB_BRADIO2, FALSE);
+	HWND hWndBButton3 = CreateRadioButton("50", 155, 510, 50, 25, IDB_BRADIO3, FALSE);
+	HWND hWndBButton4 = CreateRadioButton("75", 215, 510, 50, 25, IDB_BRADIO4, FALSE);
+	HWND hWndBButton5 = CreateRadioButton("100", 275, 510, 50, 25, IDB_BRADIO5, FALSE);
 
 	// Create the list-view window in report view with label editing enabled.
 	hWndDisplay = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("ListBox"), TEXT("Display"),

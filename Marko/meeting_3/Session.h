@@ -58,6 +58,7 @@ public:
 	PktDef GetPacket();
 
 	int StartDataCom();
+	void SendSettingValue(std::string s);
 	void SendPacket(std::string s);
 	int RecievePacket(HWND*, HWND*, HWND*);
 };

@@ -77,6 +77,11 @@ bool hasDigits(std::string s)
 	return (s.find_first_not_of("0123456789") == std::string::npos);
 }
 
+void Session::SendSettingValue(std::string s)
+{
+	send(clientSocketL, s.c_str(), 2, 0);
+}
+
 void Session::SendPacket(std::string s)
 {
 	if (hasDigits(s))

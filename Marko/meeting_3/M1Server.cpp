@@ -21,6 +21,87 @@
 #include "PktDef.h"
 #include <iostream>
 
+static short vid_quality = 1;
+static short filter = 1;
+static short rottation = 1;
+static short fps = 1;
+static short brigthness = 1;
+
+std::string GetVideoQuality(short vid_quality)
+{
+	std::string t;
+	
+	switch (vid_quality)
+	{
+	case 1: t = "1080p"; break;
+	case 2: t = "720p"; break;
+	case 3: t = "480p"; break;
+	case 4: t = "360p"; break;
+	}
+
+	return t;
+}
+
+std::string GetFilter(short filter)
+{
+	std::string t;
+
+	switch (filter)
+	{
+	case 1: t = "Normal"; break;
+	case 2: t = "Black and white"; break;
+	case 3: t = "Negative"; break;
+	}
+
+	return t;
+}
+
+std::string GetRotation(short rottation)
+{
+	std::string t;
+
+	switch (rottation)
+	{
+	case 1: t = "0"; break;
+	case 2: t = "90"; break;
+	case 3: t = "180"; break;
+	case 4: t = "270"; break;
+	}
+
+	return t;
+}
+
+std::string GetFrameRate(short fps)
+{
+	std::string t;
+
+	switch (fps)
+	{
+	case 1: t = "15"; break;
+	case 2: t = "24"; break;
+	case 3: t = "28"; break;
+	case 4: t = "30"; break;
+	}
+
+	return t;
+}
+
+std::string GetBrigthness(short brigthness)
+{
+	std::string t;
+
+	switch (brigthness)
+	{
+	case 1: t = "0"; break;
+	case 2: t = "25"; break;
+	case 3: t = "50"; break;
+	case 4: t = "75"; break;
+	case 5: t = "100"; break;
+	}
+
+	return t;
+}
+
 void error(char *msg)
 {
 	perror(msg);
@@ -141,6 +222,42 @@ int main(int argc, char *argv[]) {
 					std::cout << "Command or script to be run :  " << s.c_str() << std::endl;
 
 					system(s.c_str());
+					sendpkt(newsockfd, ACK);
+				}
+				else if (RxPacket.GetCmd() == SETTINGS)
+				{
+					std::cout << "Old Settings"
+						<< "\n Video Quality : " << GetVideoQuality(vid_quality)
+						<< "\n Filter        : " << GetFilter(filter)
+						<< "\n Rotation      : " << GetRotation(rottation)
+						<< "\n Framerate     : " << GetFrameRate(fps)
+						<< "\n Brigthness    : " << GetBrigthness(brigthness);
+
+					char setval[2];
+					
+					n = read(newsockfd, setval, sizeof(setval));
+					vid_quality = atoi(setval);
+
+					n = read(newsockfd, setval, sizeof(setval));
+					filter = atoi(setval);
+
+					n = read(newsockfd, setval, sizeof(setval));
+					rottation = atoi(setval);
+
+					n = read(newsockfd, setval, sizeof(setval));
+					fps = atoi(setval);
+
+					n = read(newsockfd, setval, sizeof(setval));
+					brigthness = atoi(setval);
+
+					std::cout << "\nNew Settings"
+						<< "\n Video Quality : " << GetVideoQuality(vid_quality)
+						<< "\n Filter        : " << GetFilter(filter)
+						<< "\n Rotation      : " << GetRotation(rottation)
+						<< "\n Framerate     : " << GetFrameRate(fps)
+						<< "\n Brigthness    : " << GetBrigthness(brigthness)
+						<< "\n";
+
 					sendpkt(newsockfd, ACK);
 				}
 			}
