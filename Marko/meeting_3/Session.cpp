@@ -71,62 +71,62 @@ int Session::StartDataCom()
     }
 }
 
-void Session::SendPacket(std::string s)
+inline static
+bool hasDigits(std::string s) 
 {
-	txPacket.SetPktCount(pktCount);
-	++pktCount;
-
-	CmdType b = (CmdType)atoi(s.c_str());
-	txPacket.SetCmd(b);
-
-	txPacket.CalcCRC();
-
-	send(clientSocketL, txPacket.GenPacket(), 7, 0);
-	txPacket.DeleteRawBuffer();
+	return (s.find_first_not_of("0123456789") == std::string::npos);
 }
 
-int Session::RecievePacket(HWND* hWndPktInfo, HWND* ghWnd)
+void Session::SendPacket(std::string s)
 {
-	int n = recv(clientSocketL, txPacket.GetRawBuffer(), 7, 0);
-
-	if (txPacket.GetRawBuffer() != NULL)
+	if (hasDigits(s))
 	{
-		if (txPacket.CheckCRC(txPacket.GetRawBuffer(), 7))
-		{
-            DisplayMsgInHWND("\nCRC Accepted\n", hWndPktInfo, ghWnd);
+		txPacket.SetPktCount(pktCount);
+		++pktCount;
+
+		CmdType b = (CmdType)atoi(s.c_str());
+		txPacket.SetCmd(b);
+
+		txPacket.CalcCRC();
+
+		send(clientSocketL, txPacket.GenPacket(), txPacket.GetLength(), 0);
+		txPacket.DeleteRawBuffer();
+	}
+	else
+	{
+		send(clientSocketL, s.c_str(), 256, 0);
+	}
+}
+
+int Session::RecievePacket(HWND* hWndPktInfo, HWND* ghWnd, HWND* hWndBuffer)
+{
+	char temp[7];
+	int n = recv(clientSocketL, temp, 7, 0);
+	
+	if (txPacket.CheckCRC(temp, 7))
+	{
+        DisplayMsgInHWND("\nCRC Accepted\n", hWndPktInfo, ghWnd);
 			
-			if (txPacket.GetAck())
-			{
-				DisplayMsgInHWND("Acknowledgement Received\n", hWndPktInfo, ghWnd);
-			}
-
-			if (txPacket.GetCmd() == COMMAND)
-            {
-				DisplayMsgInHWND("Enter name of command or script to be run : ", hWndPktInfo, ghWnd);
-
-				//IMPORTANT
-				//TODO(marko) : update pktinfo buffer and use send instead of this
-                std::string filename;
-                std::cin >> filename;
-                send(clientSocketL, filename.c_str(), 256, 0);
-
-                // Server will send ACK packet after script or command is run as confirmation
-                n = recv(clientSocketL, txPacket.GetRawBuffer(), 7, 0);
-                //memcpy(&RxPacket, rxbuffer_ackpacket, 7);
-
-                if (txPacket.CheckCRC(txPacket.GetRawBuffer(), 7))
-                {
-					DisplayMsgInHWND("Python script was ran", hWndPktInfo, ghWnd);
-                }
-            }
-            else if (txPacket.GetCmd() == SLEEP)
-            {
-				DisplayMsgInHWND("Msg Rx (SLEEP) terminating all socket connections\n", hWndPktInfo, ghWnd);
-                closesocket(clientSocketL);
-            }
-            
-            return 1;
+		if (txPacket.GetAck())
+		{
+			DisplayMsgInHWND("Acknowledgement Received\n", hWndPktInfo, ghWnd);
 		}
+
+		if (txPacket.GetCmd() == COMMAND)
+        {
+			DisplayMsgInHWND("Enter name of command or script to be run : ", hWndPktInfo, ghWnd);
+        }
+		else if (txPacket.GetCmd() == SETTINGS)
+        {
+			DisplayMsgInHWND("Settings were succesfully sent", hWndPktInfo, ghWnd);
+		}
+		else if (txPacket.GetCmd() == SLEEP)
+        {
+			DisplayMsgInHWND("Msg Rx (SLEEP) terminating all socket connections\n", hWndPktInfo, ghWnd);
+            closesocket(clientSocketL);
+        }
+            
+        return 1;
 	}
 	else
 	{

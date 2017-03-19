@@ -131,22 +131,21 @@ WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
             {
                 case 101://send command button
                 {
-                    HDC hdc = GetDC(hWndPktInfo);
+                    //HDC hdc = GetDC(hWndPktInfo);
                     char edittxt[1024];
                     int editlength = GetWindowTextLength(GetDlgItem(hWndBuffer, 200));
                     GetWindowText(hWndBuffer, edittxt, 1024);
 
-                    RECT rc;
-                    GetClientRect(hWndPktInfo, &rc);
-                    ExtTextOut(hdc, rc.left, rc.top, ETO_OPAQUE, &rc, 0, 0, 0);
+                    //RECT rc;
+                    //GetClientRect(hWndPktInfo, &rc);
+                    //ExtTextOut(hdc, rc.left, rc.top, ETO_OPAQUE, &rc, 0, 0, 0);
 
                     text = edittxt;
                     //rc.top += pktInfoBufferOffset;
 
-                    DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
-                    ReleaseDC(hWndDisplay, hdc);
-
-                    messageToBeSent = true;
+                    //DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
+                    //ReleaseDC(hWndDisplay, hdc);
+					messageToBeSent = true;
 					//TODO(marko) : decide which way is better direct send or delagted
                     //std::string a = edittxt;
                     //SendPacket(a);
@@ -414,7 +413,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 			gsession->SendPacket(text);
 			messageToBeSent = false;
 			
-			gsession->RecievePacket(&hWndPktInfo, &g.hwnd);
+			gsession->RecievePacket(&hWndPktInfo, &g.hwnd, &hWndBuffer);
 			
 			UpdateWindow(g.hwnd);
 		}

@@ -59,7 +59,7 @@ public:
 
 	int StartDataCom();
 	void SendPacket(std::string s);
-	int RecievePacket(HWND*, HWND*);
+	int RecievePacket(HWND*, HWND*, HWND*);
 };
 
 //#define PACKET_H
