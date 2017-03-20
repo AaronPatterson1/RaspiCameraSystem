@@ -21,11 +21,11 @@ We would import RPi.GPIO and use some of these commands (import RPi.GPIO as GPIO
 `GPIO.setup(channel, GPIO.IN)` //Where channel is the pin number, can also set an initial value as 3rd arg
 `GPIO.setup(channel, GPIO.OUT)` //can also specify output channel
 
- `GPIO.input(channel)` //reads value of pin - either 0/False/LOW or 1/True/HIGH
+`GPIO.input(channel)` //reads value of pin - either 0/False/LOW or 1/True/HIGH
 
- `GPIO.output(channel, state)` //Sets output state of pin, state is same values as .input can have
+`GPIO.output(channel, state)` //Sets output state of pin, state is same values as .input can have
 
- `GPIO.cleanup()` // Cleans up all channels at the end of program, can specify which channels as well
+`GPIO.cleanup()` // Cleans up all channels at the end of program, can specify which channels as well
 
 `GPIO.add_event_detect(channel, GPIO.edge_change)` //You can add a type of event detected using GPIO.RISING, GPIO.FALLING or GPIO.BOTH (replace .edge_change arg with these) and check for them.
 We will most likely use this command the most to detect changes in the motion sensor's value. Everything else can
