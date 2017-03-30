@@ -3,7 +3,7 @@
 ## Compile Instructions
 ```
 Pi - Server
- g++ -Wno-write-strings -std=c++0x M1Server.cpp PktDef.cpp
+ g++ -Wno-write-strings -std=c++0x M1Server.cpp PktDef.cpp -lpthread
 ```
 
 ## Running program instructions
