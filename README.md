@@ -44,9 +44,7 @@ Extras :
 ```
 
 ## Goals
+ - Clean up GUI
  - Constant update of vids on pi
  - Add effects to camera
  - Change Settings
- - Clean up GUI
- - Get motion sensor
- - Display sensitivity in client GUI

@@ -26,6 +26,7 @@
 //#pragma comment(lib, "commctrl.lib")
 #pragma comment(lib, "ws2_32.lib")
 
+//TODO(marko) : should add ids for the other buttons and displays here too
 //Pull these out into a resource filw
 //Video Quality
 #define IDB_VQRADIO1 301
@@ -76,16 +77,6 @@ Session* gsession;
 bool init = false;
 bool messageToBeSent = false;
 
-/*
-inline static
-void TextToHWND(RECT* rc, char* strdis)
-{
-	rc.top += pktInfoBufferOffset;
-	pktInfoBufferOffset += 20;
-	DrawTextA(hdc, strdis, strlen(strdis), &rc, DT_TOP | DT_LEFT);
-}
-*/
-
 void createVideoList() {
 	std::string line;
 	int i = 0;
@@ -97,8 +88,8 @@ void createVideoList() {
 	std::ifstream file("files.txt");
 	if (file.is_open()) {
 		while (getline(file, line)) {
-			const char* letter = line.c_str();
-			SendMessage(hWndDisplay, LB_ADDSTRING, 0, (LPARAM)letter);
+			const char* vid_file = line.c_str();
+			SendMessage(hWndDisplay, LB_ADDSTRING, 0, (LPARAM)vid_file);
 		}
 		file.close();
 	}
@@ -156,7 +147,7 @@ WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 	{
         case WM_CREATE:
         {	
-            
+            //Left empty on purpose
         }
         break;
 
@@ -174,24 +165,12 @@ WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
             {
                 case 101://send command button
                 {
-                    //HDC hdc = GetDC(hWndPktInfo);
                     char edittxt[1024];
                     int editlength = GetWindowTextLength(GetDlgItem(hWndBuffer, 200));
                     GetWindowText(hWndBuffer, edittxt, 1024);
 
-                    //RECT rc;
-                    //GetClientRect(hWndPktInfo, &rc);
-                    //ExtTextOut(hdc, rc.left, rc.top, ETO_OPAQUE, &rc, 0, 0, 0);
-
                     text = edittxt;
-                    //rc.top += pktInfoBufferOffset;
-
-                    //DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
-                    //ReleaseDC(hWndDisplay, hdc);
-					messageToBeSent = true;
-					//TODO(marko) : decide which way is better direct send or delagted
-                    //std::string a = edittxt;
-                    //SendPacket(a);
+                    messageToBeSent = true;
                 }
                 break;
 
@@ -213,28 +192,20 @@ WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
                         text = "Begin Initialization";
                         init = true;
                     }
-                    //rc.top += pktInfoBufferOffset;
-					//pktInfoBufferOffset += 20;
                     DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
 
                     int dataComState = gsession->StartDataCom();
                     if (dataComState == -1)
                     {
-						//When static scroll is added switch to this
-						//TextToHWND(rc, "Data communication start failed");
-
                         text = "Data communication start failed";
-                        //rc.top += pktInfoBufferOffset;
 						DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
                     }
 					else
 					{
 						text = "Waiting for client connection";
-						//rc.top += pktInfoBufferOffset;
 						DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
 
 						text = "\nCommands\n   0 - sends packet\n   1 - sends sleep packet (terminates connection)\n   2 - sends ack packet\n   3 - Record Video";
-						//rc.top += pktInfoBufferOffset;
 						DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
 					}
 
@@ -286,46 +257,34 @@ WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 				}
 				break;
 
-				//Make a function handle a group of radio buttons instead of expanding in the switch statement
-				//TODO(marko) : add the other buttons and settings options
-                /*case IDB_VQRADIO1:
-                {
-                    switch (HIWORD(wparam))
-                    {
-                        case BN_CLICKED:
-                        {
-                            if (SendDlgItemMessage(g.hwnd, IDB_VQRADIO1, BM_GETCHECK, 0, 0) == 0)
-                            {
-                                SendDlgItemMessage(g.hwnd, IDB_VQRADIO1, BM_SETCHECK, 1, 0);
-                                SendDlgItemMessage(g.hwnd, IDB_VQRADIO2, BM_SETCHECK, 0, 0);
-                            }
-                        }
-                        break; 
-                    }
-                }
-                break;
+				case 111://Command Pi button
+				{
+					text = "0";
+					messageToBeSent = true;
+				}
+				break;
 
-                case IDB_VQRADIO2:
-                {
-                    switch (HIWORD(wparam))
-                    {
-                        case BN_CLICKED:
-                            if (SendDlgItemMessage(g.hwnd, IDB_VQRADIO2, BM_GETCHECK, 0, 0) == 0)
-                            {
-                                SendDlgItemMessage(g.hwnd, IDB_VQRADIO2, BM_SETCHECK, 1, 0);
-                                SendDlgItemMessage(g.hwnd, IDB_VQRADIO1, BM_SETCHECK, 0, 0);
-                            }
-                            break; 
-                    }
-                }
-                break;
-				*/
+				case 112://Sleep button
+				{
+					text = "1";
+					messageToBeSent = true;
+				}
+				break;
+
+				case 113://Ack button this probably isn't needed
+				{ 
+					text = "2";
+					messageToBeSent = true;
+				}
+				break;
+
+				case 114://Video button
+				{ 
+					text = "3";
+					messageToBeSent = true;
+				}
+				break;
             }                
-        }
-        break;
-
-        case WM_MOVE:
-        {
         }
         break;
 
@@ -471,14 +430,30 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 	// Create seperate thread to retrieve vid files and update window
 	// Test to ensure display is correct
 	createVideoList();
+
 	/*
-	char* letter = "test-10:00-02-08-2017.mp4";
-	SendMessage(hWndDisplay, LB_ADDSTRING, 0, (LPARAM)letter);
-	letter = "test-11:25-01-06-2017.mp4";
-	SendMessage(hWndDisplay, LB_ADDSTRING, 1, (LPARAM)letter);
-	letter = "test-23:45-01-03-2017.mp4";
-	SendMessage(hWndDisplay, LB_ADDSTRING, 2, (LPARAM)letter);*/
+	Four buttons
+	Command 0 | Sleep 1 | Ack 2 | Video 4 | Should Sensor be a button or just use the video button
+	*/
+	HWND hwndCommand = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Command"),
+		WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
+		150, 685, 125, 40,
+		g.hwnd, (HMENU)111, NULL, NULL);
 	
+	HWND hwndSleep = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Sleep"),
+		WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
+		285, 685, 125, 40,
+		g.hwnd, (HMENU)112, NULL, NULL);
+
+	HWND hwndAck = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Ack"),
+		WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
+		420, 685, 125, 40,
+		g.hwnd, (HMENU)113, NULL, NULL);
+	
+	HWND hwndVideo = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Video"),
+		WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
+		555, 685, 125, 40,
+		g.hwnd, (HMENU)114, NULL, NULL);
 
 	hWndBuffer = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("Edit"), NULL,
 		                        WS_CHILD | WS_VISIBLE,
@@ -516,8 +491,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 			gsession->RecievePacket(&hWndPktInfo, &g.hwnd, &hWndBuffer);
 
 			UpdateWindow(g.hwnd);
-			updateVideoList();
 
+			//TODO -> (aaron) : make a thread handle this 
+			updateVideoList();
 		}
 	}
 
