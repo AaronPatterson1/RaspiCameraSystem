@@ -29,7 +29,7 @@ static short vid_quality = 1;
 static short filter = 1;
 static short rottation = 1;
 static short fps = 1;
-static short brigthness = 1;
+static short brigthness = 3;
 
 std::string GetVideoQuality(short vid_quality)
 {
@@ -53,7 +53,7 @@ std::string GetFilter(short filter)
 	switch (filter)
 	{
 	case 1: t = "Normal"; break;
-	case 2: t = "Black and white"; break;
+	case 2: t = "Black_and_white"; break;
 	case 3: t = "Negative"; break;
 	}
 
@@ -111,7 +111,9 @@ void recordVideo()
 	std::string line;
 	std::chrono::duration<double> elapsed_seconds;
 	std::chrono::time_point<std::chrono::system_clock> start, end;
-	system("python3 vid_record.py");
+	std::string s = "python3 scripts/vid_record.py 10 " + GetVideoQuality(vid_quality) + " " + GetFilter(filter) + " " + GetRotation(rottation) + " " + GetFrameRate(fps) + " " + GetBrigthness(brigthness);
+	
+	system(s.c_str());
 	//check when video finishes
 	start = std::chrono::system_clock::now();
 	while(1)
@@ -124,7 +126,6 @@ void recordVideo()
 	//send packet with name of files
 	//get strings
     /*system("ls vids/ > files.txt");
-
     std::ifstream file ("files.txt");
     if (file.is_open()) {
         while(getline(file,line))
