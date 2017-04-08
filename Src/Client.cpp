@@ -1,11 +1,11 @@
 /*
- * ========================================================================
- * $File: M1Client.cpp $
- * $Date: January 30 2017 $
- * $Revision: v1.0 $
- * $Creator: Marko Radmanovic $
- * ========================================================================
- */
+* ========================================================================
+* $File: M1Client.cpp $
+* $Date: January 30 2017 $
+* $Revision: v1.0 $
+* $Creator: Marko Radmanovic $
+* ========================================================================
+*/
 
 #include <windows.h>
 #include <windows.networking.sockets.h>
@@ -21,6 +21,8 @@
 #include <commctrl.h>
 #include <fstream>
 #include <thread>
+#include <chrono>
+#include <ctime>
 
 #pragma comment(lib, "comctl32.lib")
 //#pragma comment(lib, "commctrl.lib")
@@ -94,8 +96,20 @@ void createVideoList() {
 		file.close();
 	}
 }
-void updateVideoList() {
+void updateVideoList(int waitTime) {
 	std::string line;
+	//Thread pauses while video records, waits to update.
+	std::chrono::duration<double> elapsed_seconds;
+	std::chrono::time_point<std::chrono::system_clock> start, end;
+
+	start = std::chrono::system_clock::now();
+	while (1)
+	{
+		end = std::chrono::system_clock::now();
+		elapsed_seconds = end - start;
+		if (elapsed_seconds.count() > waitTime + 5)
+			break;
+	}
 
 	std::ifstream file("newfile.txt");
 	if (file.is_open()) {
@@ -105,6 +119,9 @@ void updateVideoList() {
 		}
 		file.close();
 	}
+	text = "Video finished recording.";
+
+	system("rm newfile.txt");
 }
 
 inline static
@@ -112,10 +129,10 @@ HWND CreateGroupBox(char* gname, int ypos)
 {
 	//TODO(marko) : add error checking
 	return CreateWindowEx(0, "BUTTON", gname,
-		                  WS_VISIBLE | WS_CHILD | BS_GROUPBOX,
-		                  25, ypos, 420, 50,
-		                  g.hwnd, (HMENU)NULL, g.hInstance,
-		                  NULL);
+		WS_VISIBLE | WS_CHILD | BS_GROUPBOX,
+		25, ypos, 420, 50,
+		g.hwnd, (HMENU)NULL, g.hInstance,
+		NULL);
 }
 
 inline static
@@ -145,166 +162,168 @@ WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message)
 	{
-        case WM_CREATE:
-        {	
-            //Left empty on purpose
-        }
-        break;
+	case WM_CREATE:
+	{
+		//Left empty on purpose
+	}
+	break;
 
-        case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWndDisplay, &ps);
-            EndPaint(hwnd, &ps);
-        }
-        break;
-		
-        case WM_COMMAND:
-        {
-            switch (LOWORD(wparam))
-            {
-                case 101://send command button
-                {
-                    char edittxt[1024];
-                    int editlength = GetWindowTextLength(GetDlgItem(hWndBuffer, 200));
-                    GetWindowText(hWndBuffer, edittxt, 1024);
+	case WM_PAINT:
+	{
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hWndDisplay, &ps);
+		EndPaint(hwnd, &ps);
+	}
+	break;
 
-                    text = edittxt;
-                    messageToBeSent = true;
-                }
-                break;
+	case WM_COMMAND:
+	{
+		switch (LOWORD(wparam))
+		{
+		case 101://send command button
+		{
+			char edittxt[1024];
+			int editlength = GetWindowTextLength(GetDlgItem(hWndBuffer, 200));
+			GetWindowText(hWndBuffer, edittxt, 1024);
 
-                case 102://Init button
-                {
-                    HDC hdc = GetDC(hWndPktInfo);
-                    char edittxt[1024];
+			text = edittxt;
+			messageToBeSent = true;
+		}
+		break;
 
-                    RECT rc;
-                    GetClientRect(hWndPktInfo, &rc);
-                    ExtTextOut(hdc, rc.left, rc.top, ETO_OPAQUE, &rc, 0, 0, 0);
-                    if (init)
-                    {
-                        text = "Already Initialized";
-                        return 0;
-                    }
-                    else
-                    {
-                        text = "Begin Initialization";
-                        init = true;
-                    }
-                    DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
+		case 102://Init button
+		{
+			HDC hdc = GetDC(hWndPktInfo);
+			char edittxt[1024];
 
-                    int dataComState = gsession->StartDataCom();
-                    if (dataComState == -1)
-                    {
-                        text = "Data communication start failed";
-						DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
-                    }
-					else
-					{
-						text = "Waiting for client connection";
-						DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
+			RECT rc;
+			GetClientRect(hWndPktInfo, &rc);
+			ExtTextOut(hdc, rc.left, rc.top, ETO_OPAQUE, &rc, 0, 0, 0);
+			if (init)
+			{
+				text = "Already Initialized";
+				return 0;
+			}
+			else
+			{
+				text = "Begin Initialization";
+				init = true;
+			}
+			DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
 
-						text = "\nCommands\n   0 - sends packet\n   1 - sends sleep packet (terminates connection)\n   2 - sends ack packet\n   3 - Record Video";
-						DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
-					}
+			int dataComState = gsession->StartDataCom();
+			if (dataComState == -1)
+			{
+				text = "Data communication start failed";
+				DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
+			}
+			else
+			{
+				text = "Waiting for client connection";
+				DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
 
-                    ReleaseDC(hWndPktInfo, hdc);
-					UpdateWindow(g.hwnd);
-                }
-                break;
+				text = "\nCommands\n   0 - sends packet\n   1 - sends sleep packet (terminates connection)\n   2 - sends ack packet\n   3 - Record Video";
+				DrawTextA(hdc, text, strlen(text), &rc, DT_TOP | DT_LEFT);
+			}
 
-				case 103:
-				{
-					gsession->SendPacket("4");//Settings
+			ReleaseDC(hWndPktInfo, hdc);
+			UpdateWindow(g.hwnd);
+		}
+		break;
 
-					std::string a;
-					//pull this out into a function
-					//Video Quality
-					if (IsDlgButtonChecked(hwnd, IDB_VQRADIO1)) a = "1";
-					else if (IsDlgButtonChecked(hwnd, IDB_VQRADIO2)) a = "2";
-					else if (IsDlgButtonChecked(hwnd, IDB_VQRADIO3)) a = "3";
-					else if (IsDlgButtonChecked(hwnd, IDB_VQRADIO4)) a = "4";
-					gsession->SendSettingValue(a);
+		case 103:
+		{
+			gsession->SendPacket("4");//Settings
 
-					//Filter
-					if (IsDlgButtonChecked(hwnd, IDB_FRADIO1)) a = "1";
-					else if (IsDlgButtonChecked(hwnd, IDB_FRADIO2)) a = "2";
-					else if (IsDlgButtonChecked(hwnd, IDB_FRADIO3)) a = "3";
-					gsession->SendSettingValue(a);
+			std::string a;
+			//pull this out into a function
+			//Video Quality
+			if (IsDlgButtonChecked(hwnd, IDB_VQRADIO1)) a = "1";
+			else if (IsDlgButtonChecked(hwnd, IDB_VQRADIO2)) a = "2";
+			else if (IsDlgButtonChecked(hwnd, IDB_VQRADIO3)) a = "3";
+			else if (IsDlgButtonChecked(hwnd, IDB_VQRADIO4)) a = "4";
+			gsession->SendSettingValue(a);
 
-					//Rotation
-					if (IsDlgButtonChecked(hwnd, IDB_RRADIO1)) a = "1";
-					else if (IsDlgButtonChecked(hwnd, IDB_RRADIO2)) a = "2";
-					else if (IsDlgButtonChecked(hwnd, IDB_RRADIO3)) a = "3";
-					else if (IsDlgButtonChecked(hwnd, IDB_RRADIO4)) a = "4";
-					gsession->SendSettingValue(a);
+			//Filter
+			if (IsDlgButtonChecked(hwnd, IDB_FRADIO1)) a = "1";
+			else if (IsDlgButtonChecked(hwnd, IDB_FRADIO2)) a = "2";
+			else if (IsDlgButtonChecked(hwnd, IDB_FRADIO3)) a = "3";
+			gsession->SendSettingValue(a);
 
-					//Framerate
-					if (IsDlgButtonChecked(hwnd, IDB_FRRADIO1)) a = "1";
-					else if (IsDlgButtonChecked(hwnd, IDB_FRRADIO2)) a = "2";
-					else if (IsDlgButtonChecked(hwnd, IDB_FRRADIO3)) a = "3";
-					else if (IsDlgButtonChecked(hwnd, IDB_FRRADIO4)) a = "4";
-					gsession->SendSettingValue(a);
+			//Rotation
+			if (IsDlgButtonChecked(hwnd, IDB_RRADIO1)) a = "1";
+			else if (IsDlgButtonChecked(hwnd, IDB_RRADIO2)) a = "2";
+			else if (IsDlgButtonChecked(hwnd, IDB_RRADIO3)) a = "3";
+			else if (IsDlgButtonChecked(hwnd, IDB_RRADIO4)) a = "4";
+			gsession->SendSettingValue(a);
 
-					//Brightness
-					if (IsDlgButtonChecked(hwnd, IDB_BRADIO1)) a = "1";
-					else if (IsDlgButtonChecked(hwnd, IDB_BRADIO2)) a = "2";
-					else if (IsDlgButtonChecked(hwnd, IDB_BRADIO3)) a = "3";
-					else if (IsDlgButtonChecked(hwnd, IDB_BRADIO4)) a = "4";
-					else if (IsDlgButtonChecked(hwnd, IDB_BRADIO5)) a = "5";
-					gsession->SendSettingValue(a);
-				}
-				break;
+			//Framerate
+			if (IsDlgButtonChecked(hwnd, IDB_FRRADIO1)) a = "1";
+			else if (IsDlgButtonChecked(hwnd, IDB_FRRADIO2)) a = "2";
+			else if (IsDlgButtonChecked(hwnd, IDB_FRRADIO3)) a = "3";
+			else if (IsDlgButtonChecked(hwnd, IDB_FRRADIO4)) a = "4";
+			gsession->SendSettingValue(a);
 
-				case 111://Command Pi button
-				{
-					text = "0";
-					messageToBeSent = true;
-				}
-				break;
+			//Brightness
+			if (IsDlgButtonChecked(hwnd, IDB_BRADIO1)) a = "1";
+			else if (IsDlgButtonChecked(hwnd, IDB_BRADIO2)) a = "2";
+			else if (IsDlgButtonChecked(hwnd, IDB_BRADIO3)) a = "3";
+			else if (IsDlgButtonChecked(hwnd, IDB_BRADIO4)) a = "4";
+			else if (IsDlgButtonChecked(hwnd, IDB_BRADIO5)) a = "5";
 
-				case 112://Sleep button
-				{
-					text = "1";
-					messageToBeSent = true;
-				}
-				break;
+			//to do: Video Recording Length 
+			gsession->SendSettingValue(a);
+		}
+		break;
 
-				case 113://Ack button this probably isn't needed
-				{ 
-					text = "2";
-					messageToBeSent = true;
-				}
-				break;
+		case 111://Command Pi button
+		{
+			text = "0";
+			messageToBeSent = true;
+		}
+		break;
 
-				case 114://Video button
-				{ 
-					text = "3";
-					messageToBeSent = true;
-				}
-				break;
-            }                
-        }
-        break;
+		case 112://Sleep button
+		{
+			text = "1";
+			messageToBeSent = true;
+		}
+		break;
 
-        case WM_CLOSE:
-        {
-            DestroyWindow(g.hwnd);
-        }
-        break;
+		case 113://Ack button this probably isn't needed
+		{
+			text = "2";
+			messageToBeSent = true;
+		}
+		break;
 
-        case WM_DESTROY:
-        {
-            PostQuitMessage(0);
-        }
-        break;
+		case 114://Video button
+		{
+			text = "3";
+			messageToBeSent = true;
+		}
+		break;
+		}
+	}
+	break;
 
-        default:
-        {
-            return DefWindowProc(hwnd, message, wparam, lparam);
-        }
-        break;
+	case WM_CLOSE:
+	{
+		DestroyWindow(g.hwnd);
+	}
+	break;
+
+	case WM_DESTROY:
+	{
+		PostQuitMessage(0);
+	}
+	break;
+
+	default:
+	{
+		return DefWindowProc(hwnd, message, wparam, lparam);
+	}
+	break;
 	}
 }
 
@@ -316,7 +335,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 	g.hInstance = hInstance;
 
 	WNDCLASSEX wc;
-    wc.cbSize = sizeof(WNDCLASSEX);
+	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wc.lpfnWndProc = WndProc;
 	wc.cbClsExtra = 0;
@@ -344,9 +363,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 	AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, false);
 
 	g.hwnd = CreateWindowEx(WS_EX_STATICEDGE, "Motion Camera Client", "Drone Communication - Client",
-		                    WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-		                    rect.right - rect.left, rect.bottom - rect.top,
-		                    NULL, NULL, hInstance, NULL);
+		WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
+		rect.right - rect.left, rect.bottom - rect.top,
+		NULL, NULL, hInstance, NULL);
 
 	if (g.hwnd == NULL)
 	{
@@ -356,24 +375,24 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 
 	//TODO(marko) : drag out button and display creation to seperate function instead
 	HWND hwndSend = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Send"),
-		                           WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
-		                           800, 10, 125, 40,
-		                           g.hwnd, (HMENU)101, NULL, NULL);
+		WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
+		800, 10, 125, 40,
+		g.hwnd, (HMENU)101, NULL, NULL);
 
 	HWND hwndInit = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Initialize"),
-		                           WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
-		                           800, 685, 125, 40,
-		                           g.hwnd, (HMENU)102, NULL, NULL);
+		WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
+		800, 685, 125, 40,
+		g.hwnd, (HMENU)102, NULL, NULL);
 
 	HWND hwndSettingSend = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Save Settings"),
-		                                  WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
-		                                  10, 685, 125, 40,
-		                                  g.hwnd, (HMENU)103, NULL, NULL);
+		WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
+		10, 685, 125, 40,
+		g.hwnd, (HMENU)103, NULL, NULL);
 
 	HWND hwndGroupBox = CreateWindowEx(0, TEXT("STATIC"), TEXT("Settings"),
-		                               WS_VISIBLE | WS_CHILD | WS_THICKFRAME,
-		                               10, 200, 450, 470,
-		                               g.hwnd, (HMENU)104, NULL, NULL);
+		WS_VISIBLE | WS_CHILD | WS_THICKFRAME,
+		10, 200, 450, 470,
+		g.hwnd, (HMENU)104, NULL, NULL);
 
 
 	//Settings radio buttons Video Quality
@@ -392,7 +411,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 
 	HWND hWndVFButton2 = CreateRadioButton("Black and white", 125, 315, 125, 25, IDB_FRADIO2, FALSE);
 	HWND hWndVFButton3 = CreateRadioButton("Negative", 255, 315, 75, 25, IDB_FRADIO3, FALSE);
-	
+
 	//Rotation
 	HWND hWndVideoRotation = CreateGroupBox("Video Rotation", 365);
 	HWND hWndRButton1 = CreateRadioButton("0", 35, 380, 50, 25, IDB_RRADIO1, TRUE);
@@ -413,7 +432,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 
 	//Brigthness
 	HWND hWndBrightness = CreateGroupBox("Brightness", 495);
-    HWND hWndBButton1 = CreateRadioButton("0", 35, 510, 50, 25, IDB_BRADIO1, TRUE);
+	HWND hWndBButton1 = CreateRadioButton("0", 35, 510, 50, 25, IDB_BRADIO1, TRUE);
 	SendMessage(hWndBButton1, BM_SETCHECK, BST_CHECKED, 0);
 
 	HWND hWndBButton2 = CreateRadioButton("25", 95, 510, 50, 25, IDB_BRADIO2, FALSE);
@@ -423,9 +442,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 
 	// Create the list-view window in report view with label editing enabled.
 	hWndDisplay = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("ListBox"), TEXT("Display"),
-								 WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | LBS_HASSTRINGS | LBS_STANDARD,
-								 475, 200, 450, 475,
-								 g.hwnd, (HMENU)105, NULL, NULL);
+		WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | LBS_HASSTRINGS | LBS_STANDARD,
+		475, 200, 450, 475,
+		g.hwnd, (HMENU)105, NULL, NULL);
 
 	// Create seperate thread to retrieve vid files and update window
 	// Test to ensure display is correct
@@ -439,7 +458,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 		WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
 		150, 685, 125, 40,
 		g.hwnd, (HMENU)111, NULL, NULL);
-	
+
 	HWND hwndSleep = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Sleep"),
 		WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
 		285, 685, 125, 40,
@@ -449,22 +468,22 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 		WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
 		420, 685, 125, 40,
 		g.hwnd, (HMENU)113, NULL, NULL);
-	
+
 	HWND hwndVideo = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Video"),
 		WS_VISIBLE | WS_CHILD | WS_BORDER | BS_FLAT,
 		555, 685, 125, 40,
 		g.hwnd, (HMENU)114, NULL, NULL);
 
 	hWndBuffer = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("Edit"), NULL,
-		                        WS_CHILD | WS_VISIBLE,
-		                        10, 10, 775, 40,
-		                        g.hwnd, (HMENU)106, NULL, NULL);
+		WS_CHILD | WS_VISIBLE,
+		10, 10, 775, 40,
+		g.hwnd, (HMENU)106, NULL, NULL);
 
 	//Add scroll support instead of overwriting the info
 	hWndPktInfo = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("Static"), NULL,
-								 WS_CHILD | WS_VISIBLE | WS_VSCROLL,
-								 10, 60, 775, 115,
-								 g.hwnd, (HMENU)107, NULL, NULL);
+		WS_CHILD | WS_VISIBLE | WS_VSCROLL,
+		10, 60, 775, 115,
+		g.hwnd, (HMENU)107, NULL, NULL);
 
 	ShowWindow(g.hwnd, nCmdShow);
 	UpdateWindow(hWndDisplay);
@@ -493,10 +512,11 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 			UpdateWindow(g.hwnd);
 
 			//TODO -> (aaron) : make a thread handle this 
-			updateVideoList();
+			std::thread update(updateVideoList, 10);
+			update.detach();
 		}
 	}
 
 	ReleaseDC(g.hwnd, g.hdc);
-    return 0;
+	return 0;
 }
