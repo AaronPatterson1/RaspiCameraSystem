@@ -61,7 +61,7 @@ int Session::StartDataCom()
 
 	SvrAddr.sin_family = AF_INET;
 	SvrAddr.sin_port = htons(51717);
-    //SvrAddr.sin_addr.s_addr = INADDR_ANY;//"192.168.1.3"
+	//SvrAddr.sin_addr.s_addr = inet_addr("192.168.1.3");
 	SvrAddr.sin_addr.s_addr = inet_addr("169.254.164.4");
 
     if ((connect(clientSocketL, (struct sockaddr *)&SvrAddr, sizeof(SvrAddr))) == SOCKET_ERROR)

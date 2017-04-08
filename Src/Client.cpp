@@ -59,6 +59,13 @@
 #define IDB_BRADIO3 343
 #define IDB_BRADIO4 344
 #define IDB_BRADIO5 345
+
+//Times
+#define IDB_TRADIO1 351
+#define IDB_TRADIO2 352
+#define IDB_TRADIO3 353
+#define IDB_TRADIO4 354
+
 //End of window menu defines
 
 struct MainWind
@@ -96,7 +103,7 @@ void createVideoList() {
 		file.close();
 	}
 }
-void updateVideoList(int waitTime) {
+void updateVideoList(int waitTime, HWND* hWndDisplay) {
 	std::string line;
 	//Thread pauses while video records, waits to update.
 	std::chrono::duration<double> elapsed_seconds;
@@ -111,11 +118,13 @@ void updateVideoList(int waitTime) {
 			break;
 	}
 
+	int i = 0;
 	std::ifstream file("newfile.txt");
 	if (file.is_open()) {
 		while (getline(file, line)) {
 			const char* letter = line.c_str();
-			SendMessage(hWndDisplay, LB_ADDSTRING, 0, (LPARAM)letter);
+			SendMessage(*hWndDisplay, LB_ADDSTRING, i, (LPARAM)letter);
+			++i;
 		}
 		file.close();
 	}
@@ -270,6 +279,12 @@ WndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 			else if (IsDlgButtonChecked(hwnd, IDB_BRADIO3)) a = "3";
 			else if (IsDlgButtonChecked(hwnd, IDB_BRADIO4)) a = "4";
 			else if (IsDlgButtonChecked(hwnd, IDB_BRADIO5)) a = "5";
+
+			//Times
+			if (IsDlgButtonChecked(hwnd, IDB_TRADIO1)) a = "1";
+			else if (IsDlgButtonChecked(hwnd, IDB_TRADIO2)) a = "2";
+			else if (IsDlgButtonChecked(hwnd, IDB_TRADIO3)) a = "3";
+			else if (IsDlgButtonChecked(hwnd, IDB_TRADIO4)) a = "4";
 
 			//to do: Video Recording Length 
 			gsession->SendSettingValue(a);
@@ -440,6 +455,15 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 	HWND hWndBButton4 = CreateRadioButton("75", 215, 510, 50, 25, IDB_BRADIO4, FALSE);
 	HWND hWndBButton5 = CreateRadioButton("100", 275, 510, 50, 25, IDB_BRADIO5, FALSE);
 
+	//Video Timings
+	HWND hWndTrightness = CreateGroupBox("Times", 560);
+	HWND hWndTButton1 = CreateRadioButton("15", 35, 575, 50, 25, IDB_TRADIO1, TRUE);
+	SendMessage(hWndTButton1, BM_SETCHECK, BST_CHECKED, 0);
+
+	HWND hWndTButton2 = CreateRadioButton("30", 95, 575, 50, 25, IDB_TRADIO2, FALSE);
+	HWND hWndTButton3 = CreateRadioButton("45", 155, 575, 50, 25, IDB_TRADIO3, FALSE);
+	HWND hWndTButton4 = CreateRadioButton("60", 215, 575, 50, 25, IDB_TRADIO4, FALSE);
+
 	// Create the list-view window in report view with label editing enabled.
 	hWndDisplay = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("ListBox"), TEXT("Display"),
 		WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | LBS_HASSTRINGS | LBS_STANDARD,
@@ -503,7 +527,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 
 		if (init && messageToBeSent)
 		{
-
 			gsession->SendPacket(text);
 			messageToBeSent = false;
 
@@ -512,7 +535,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 			UpdateWindow(g.hwnd);
 
 			//TODO -> (aaron) : make a thread handle this 
-			std::thread update(updateVideoList, 10);
+			std::thread update(updateVideoList, 10, &hWndDisplay);
 			update.detach();
 		}
 	}
