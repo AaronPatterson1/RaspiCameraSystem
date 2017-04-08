@@ -120,7 +120,7 @@ void recordVideo()
 	{
 		end = std::chrono::system_clock::now();
 		elapsed_seconds = end - start;
-		if (elapsed_seconds.count() > 6)
+		if (elapsed_seconds.count() > 11)
 			break;
 	}
 	//send packet with name of files
