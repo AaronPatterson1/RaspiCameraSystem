@@ -30,6 +30,7 @@ static short filter = 1;
 static short rottation = 1;
 static short fps = 1;
 static short brigthness = 3;
+static short timeRec = 1;
 
 std::string GetVideoQuality(short vid_quality)
 {
@@ -106,13 +107,27 @@ std::string GetBrigthness(short brigthness)
 	return t;
 }
 
-void recordVideo()
+std::string GetTime(short timeRec)
+{
+	std::string t;
+
+	switch (timeRec)
+	{
+	case 1: t = "15"; break;
+	case 2: t = "30"; break;
+	case 3: t = "45"; break;
+	case 4: t = "60"; break;
+	}
+
+	return t;
+}
+
+void recordVideo(int recTime)
 {
 	std::string line;
 	std::chrono::duration<double> elapsed_seconds;
 	std::chrono::time_point<std::chrono::system_clock> start, end;
-	std::string s = "python3 scripts/vid_record.py 10 " + GetVideoQuality(vid_quality) + " " + GetFilter(filter) + " " + GetRotation(rottation) + " " + GetFrameRate(fps) + " " + GetBrigthness(brigthness);
-	
+	std::string s = "python3 scripts/vid_record.py " + std::to_string(recTime) + " " + GetVideoQuality(vid_quality) + " " + GetFilter(filter) + " " + GetRotation(rottation) + " " + GetFrameRate(fps) + " " + GetBrigthness(brigthness);
 	system(s.c_str());
 	//check when video finishes
 	start = std::chrono::system_clock::now();
@@ -120,7 +135,7 @@ void recordVideo()
 	{
 		end = std::chrono::system_clock::now();
 		elapsed_seconds = end - start;
-		if (elapsed_seconds.count() > 11)
+		if (elapsed_seconds.count() > recTime)
 			break;
 	}
 	//send packet with name of files
@@ -277,7 +292,8 @@ int main(int argc, char *argv[]) {
 						<< "\n Filter        : " << GetFilter(filter)
 						<< "\n Rotation      : " << GetRotation(rottation)
 						<< "\n Framerate     : " << GetFrameRate(fps)
-						<< "\n Brigthness    : " << GetBrigthness(brigthness);
+						<< "\n Brigthness    : " << GetBrigthness(brigthness)
+						<< "\n Time Recorded : " << GetTime(timeRec);
 
 					char setval[2];
 					
@@ -295,6 +311,9 @@ int main(int argc, char *argv[]) {
 
 					n = read(newsockfd, setval, sizeof(setval));
 					brigthness = atoi(setval);
+					
+					n = read(newsockfd, setval, sizeof(setval));
+					timeRec = atoi(setval);
 
 					std::cout << "\nNew Settings"
 						<< "\n Video Quality : " << GetVideoQuality(vid_quality)
@@ -302,18 +321,27 @@ int main(int argc, char *argv[]) {
 						<< "\n Rotation      : " << GetRotation(rottation)
 						<< "\n Framerate     : " << GetFrameRate(fps)
 						<< "\n Brigthness    : " << GetBrigthness(brigthness)
-						<< "\n";
+						<< "\n Time Recorded : " << GetTime(timeRec);
 
 					sendpkt(newsockfd, ACK);
 				}
 				else if (RxPacket.GetCmd() == VIDEO)
 				{
-					std::cout << "Video recording started..." << std::endl;
+					int t;
+
+					switch (timeRec)
+					{
+						case 1: t = 15; break;
+						case 2: t = 30; break;
+						case 3: t = 45; break;
+						case 4: t = 60; break;
+					}
+					
+					std::cout << "Video is recording." << std::endl;
 					//Video recording thread
-					std::thread record(recordVideo);
+					std::thread record(recordVideo, t);
 					sendpkt(newsockfd, ACK);
 					record.join();
-					std::cout << "Video finished recording." << std::endl;
 					
 				} 
 			}
